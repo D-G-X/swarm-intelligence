@@ -223,43 +223,37 @@ public class Vehicle {
 	}
 
     double[] obstacleAvoidance(ArrayList<Obstacle> obstacles) {
-        double[] vel_dest = new double[2];
-        double[] acc_dest = new double[2];
-        acc_dest[0] = 0;
-        acc_dest[1] = 0;
-
-        // The distance at which the vehicle starts to "see" and avoid the box
-        double avoidanceRadius = 30;
+        double[] acc_total = new double[2];
+        // Increase the radius so the vehicle reacts sooner
+        double avoidanceRadius = 30.0;
 
         for (Obstacle obs : obstacles) {
-            // Calculate distance between vehicle and obstacle center[cite: 2]
-            double dist = Math.sqrt(Math.pow(obs.position[0] - pos[0], 2) +
-                    Math.pow(obs.position[1] - pos[1], 2));
+            double dx = pos[0] - obs.position[0];
+            double dy = pos[1] - obs.position[1];
+            double dist = Math.sqrt(dx * dx + dy * dy);
 
+            // If the vehicle is inside or very close to the radius
             if (dist < avoidanceRadius) {
-                // Vector pointing from obstacle to vehicle (the "push away" direction)
-                double[] pushAway = new double[2];
-                pushAway[0] = pos[0] - obs.position[0];
-                pushAway[1] = pos[1] - obs.position[1];
+                double[] pushAway = new double[]{dx, dy};
 
-                // Normalize and scale the push[cite: 2]
                 if (VectorCalculation.length(pushAway) > 1e-8) {
                     pushAway = VectorCalculation.normalize(pushAway);
                 }
 
-                // The closer the obstacle, the stronger the push
-                double strength = (avoidanceRadius - dist) / avoidanceRadius;
-                vel_dest[0] += pushAway[0] * strength;
-                vel_dest[1] += pushAway[1] * strength;
+                // Exponential force: (Radius / Distance)^2 creates a massive push
+                // as the vehicle gets closer to the obstacle
+                double intensity = Math.pow((avoidanceRadius / Math.max(dist, 1.0)), 2);
+
+                acc_total[0] += pushAway[0] * intensity;
+                acc_total[1] += pushAway[1] * intensity;
             }
         }
 
-        if (VectorCalculation.length(vel_dest) > 1e-8) {
-            acc_dest = calculateAcc(vel_dest);
-            acc_dest = VectorCalculation.truncate(acc_dest, max_acc);
+        // If there is an avoidance force, truncate it to max_acc
+        if (VectorCalculation.length(acc_total) > 1e-8) {
+            return VectorCalculation.truncate(acc_total, max_acc);
         }
-
-        return acc_dest;
+        return new double[]{0, 0};
     }
 
 	public void position_Box() {
