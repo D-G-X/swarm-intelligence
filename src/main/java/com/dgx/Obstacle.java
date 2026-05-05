@@ -1,17 +1,12 @@
 package com.dgx;
 
 public class Obstacle {
-    private double obstacle_width = 40;
-    private double obstacle_height = 40;
-
-    final double FZL;
-    final double FZB;
+    private double obstacle_width = 20;
+    private double obstacle_height = 20;
 
     double[] position;
 
     Obstacle(double[] position) {
-        this.FZL = 2;
-        this.FZB = 1;
         this.position = position;
         if(position[0] < obstacle_width){
             this.position[0] += 40;

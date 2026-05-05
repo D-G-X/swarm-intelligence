@@ -7,7 +7,7 @@ import javax.swing.*;
 public class Simulation extends JFrame {
     static int sleep = 8; // delay in frame
     static double pix = 0.2; // the scaling factor
-    int anzFz = 25; // number of cars (Anzahl Fahrzeuge)
+    int anzFz = 30; // number of cars (Anzahl Fahrzeuge)
 
 
     ArrayList<Vehicle> allVehicles = new ArrayList<>();
@@ -19,11 +19,11 @@ public class Simulation extends JFrame {
 
         for (int k = 0; k < anzFz; k++) {
             Vehicle car = new Vehicle();
-            if (k < 2) car.type = 1; // type 1 has visible boundary
+            if (k < 0) car.type = 1; // type 1 has visible boundary
             allVehicles.add(car);
         }
 
-        int numObstacles = 1;
+        int numObstacles = 3;
         double minGap = 100.0;
 
         System.out.println("Generating Obstacles");// Minimum distance between obstacles

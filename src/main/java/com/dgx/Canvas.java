@@ -50,29 +50,21 @@ public class Canvas extends JPanel {
 		return q;
 	}
 
-    public Polygon kfzInPolygonObs(Obstacle fz){
-        Polygon   q = new Polygon();
-        int    l    = (int)(fz.getObstacle_width()/pix);
-        int    b    = (int)(fz.getObstacle_height()/pix);
-        int    x    = (int)(fz.position[0]/pix);
-        int    y    = (int)(fz.position[1]/pix);
-        int    dia  = (int)(Math.sqrt(Math.pow(l/2, 2)+Math.pow(b/2, 2)));
-        double phi1 = Math.atan(fz.FZB/fz.FZL);
-        double phi2 = Math.PI-phi1;
-        double phi3 = Math.PI+phi1;
-        double phi4 = 2*Math.PI-phi1;
-        int      x1 = (int)(x+(dia*Math.cos(phi1)));
-        int      y1 = (int)(y+(dia*Math.sin(phi1)));
-        int      x2 = (int)(x+(dia*Math.cos(phi2)));
-        int      y2 = (int)(y+(dia*Math.sin(phi2)));
-        int      x3 = (int)(x+(dia*Math.cos(phi3)));
-        int      y3 = (int)(y+(dia*Math.sin(phi3)));
-        int      x4 = (int)(x+(dia*Math.cos(phi4)));
-        int      y4 = (int)(y+(dia*Math.sin(phi4)));
-        q.addPoint(x1, y1);
-        q.addPoint(x2, y2);
-        q.addPoint(x3, y3);
-        q.addPoint(x4, y4);
+    public Polygon kfzInPolygonObs(Obstacle obs) {
+        Polygon q = new Polygon();
+
+        // Scale dimensions and center position to pixels
+        int halfW = (int)((obs.getObstacle_width() / 2) / pix);
+        int halfH = (int)((obs.getObstacle_height() / 2) / pix);
+        int x = (int)(obs.position[0] / pix);
+        int y = (int)(obs.position[1] / pix);
+
+        // Directly define the four corners of the axis-aligned square
+        q.addPoint(x + halfW, y + halfH); // Top Right
+        q.addPoint(x - halfW, y + halfH); // Top Left
+        q.addPoint(x - halfW, y - halfH); // Bottom Left
+        q.addPoint(x + halfW, y - halfH); // Bottom Right
+
         return q;
     }
 	
