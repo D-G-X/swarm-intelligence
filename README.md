@@ -2,30 +2,30 @@
 
 ### 1. Swarm Intelligence (Boids Model)
 
-Each vehicle operates based on three local rules[cite: 1]:
+Each vehicle operates based on three local rules:
 
-- **Separation**: Maintains a personal space to avoid collisions with neighbors[cite: 1].
-- **Alignment**: Adjusts heading to match the average direction of the local flock[cite: 1].
-- **Cohesion**: Steers toward the average position (center of mass) of nearby vehicles[cite: 1].
+- **Separation**: Maintains a personal space to avoid collisions with neighbors.
+- **Alignment**: Adjusts heading to match the average direction of the local flock.
+- **Cohesion**: Steers toward the average position (center of mass) of nearby vehicles.
 
 ### 2. Foraging & Targeting
 
-- **Target Spawning**: Targets appear at random locations within the vehicle's reachable bounds, avoiding obstacle footprints[cite: 3].
-- **Consumption**: When the swarm reaches a target, they congregate for **3 seconds**[cite: 3]. During this phase, "Alignment" forces are suppressed to allow vehicles to stop and gather[cite: 1].
-- **Dispersal Phase**: After a target is consumed, the swarm enters a **2-second dispersal state**, moving randomly to prevent clumping before the next target spawns[cite: 1, 3].
+- **Target Spawning**: Targets appear at random locations within the vehicle's reachable bounds, avoiding obstacle footprints.
+- **Consumption**: When the swarm reaches a target, they congregate for **3 seconds**. During this phase, "Alignment" forces are suppressed to allow vehicles to stop and gather.
+- **Dispersal Phase**: After a target is consumed, the swarm enters a **2-second dispersal state**, moving randomly to prevent clumping before the next target spawns.
 
 ### 3. Navigation & Obstacles
 
-- **Obstacle Avoidance**: Vehicles use an exponential "push-away" force to steer clear of gray obstacles[cite: 1].
-- **Reflective Boundaries**: The simulation uses a boundary box where vehicles bounce off the edges to remain within the visible window[cite: 1].
+- **Obstacle Avoidance**: Vehicles use an exponential "push-away" force to steer clear of gray obstacles.
+- **Reflective Boundaries**: The simulation uses a boundary box where vehicles bounce off the edges to remain within the visible window.
 
 ## Project Structure
 
-- `Simulation.java`: The application entry point. Manages the simulation loop, target lifecycle, and obstacle generation[cite: 3].
-- `Canvas.java`: Handles the rendering of rotated vehicle polygons, static obstacles, and the dynamic target[cite: 4].
-- `Vehicle.java`: Contains the core behavior logic, including steering weights and physical movement updates[cite: 1].
-- `Obstacle.java`: Represents the static box obstacles with configurable dimensions[cite: 1, 4].
-- `VectorCalculation.java`: A utility class for 2D vector math, normalization, and truncation[cite: 2].
+- `Simulation.java`: The application entry point. Manages the simulation loop, target lifecycle, and obstacle generation.
+- `Canvas.java`: Handles the rendering of rotated vehicle polygons, static obstacles, and the dynamic target.
+- `Vehicle.java`: Contains the core behavior logic, including steering weights and physical movement updates.
+- `Obstacle.java`: Represents the static box obstacles with configurable dimensions.
+- `VectorCalculation.java`: A utility class for 2D vector math, normalization, and truncation.
 
 ---
 
