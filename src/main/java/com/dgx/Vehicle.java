@@ -1,7 +1,6 @@
 package com.dgx;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class Vehicle {
 	static int allId = 0;
@@ -33,8 +32,8 @@ public class Vehicle {
 		pos = new double[2];
 		vel = new double[2];
 		
-		pos[0] = Simulation.pix * 500 * Math.random();
-		pos[1] = Simulation.pix * 500 * Math.random();
+		pos[0] = Simulation.pix * 800 * Math.random();
+		pos[1] = Simulation.pix * 800 * Math.random();
 		double angle = 2 * Math.PI * Math.random();
 		vel[0] = Math.cos(angle) * max_vel;
 		vel[1] = Math.sin(angle) * max_vel;
@@ -176,17 +175,21 @@ public class Vehicle {
 		return acc_dest;
 	}
 
-    public double[] calculateWeightedAcc(ArrayList<Vehicle> allVehicles, ArrayList<Obstacle> obstacles) {
+    public double[] calculateWeightedAcc1(ArrayList<Vehicle> allVehicles, ArrayList<Obstacle> obstacles, double[] target) {
         double[] acc_dest;
+        double[] acc_swarm = new double[2]; // sum of cohesion, separation, alignment[cite: 1]
         double f_zus = 0.05;
         double f_sep = 0.55;
         double f_aus = 0.4;
-        double f_obs = 0.8; // High priority to avoid hitting boxes[cite: 1]
+        double f_obs = 0.8; // High priority to avoid hitting boxes
+        double f_target = 0.3;
 
         double[] acc_cohesion = cohesion(allVehicles);
         double[] acc_sep = separation(allVehicles);
         double[] acc_align = alignment(allVehicles);
-        double[] acc_obs = obstacleAvoidance(obstacles); // New force[cite: 1]
+        double[] acc_obs = obstacleAvoidance(obstacles);
+        double[] acc_seek = seekTarget(target);
+
 
         double x = (f_zus * acc_cohesion[0]) + (f_sep * acc_sep[0]) +
                 (f_aus * acc_align[0]) + (f_obs * acc_obs[0]);
@@ -198,9 +201,43 @@ public class Vehicle {
         return acc_dest;
     }
 
-	void move(ArrayList<Vehicle> allVehicles, ArrayList<Obstacle> obstacles) {
+    public double[] calculateWeightedAcc(ArrayList<Vehicle> allVehicles, ArrayList<Obstacle> obstacles, double[] target, boolean isConsuming) {
+        // 1. Define all weights
+        double f_zus = 0.05;
+        double f_sep = 0.55;
+        double f_obs = 0.8; // High priority to avoid hitting boxes
+//        double f_target = 0.3;
+        double f_aus = isConsuming ? 0.0 : 0.4; // Stop trying to "flow" together if eating
+        double f_target = isConsuming ? 1.2 : 0.3; // Much stronger pull to the center point if consuming[cite: 1]
+
+        // 2. Calculate individual force vectors
+        double[] acc_cohesion = cohesion(allVehicles);
+        double[] acc_sep      = separation(allVehicles);
+        double[] acc_align    = alignment(allVehicles);
+        double[] acc_obs      = obstacleAvoidance(obstacles);
+        double[] acc_seek     = seekTarget(target);
+
+        // 3. Combine all forces into a single X and Y sum
+        double x = (f_zus * acc_cohesion[0]) +
+                (f_sep * acc_sep[0]) +
+                (f_aus * acc_align[0]) +
+                (f_obs * acc_obs[0]) +
+                (f_target * acc_seek[0]);
+
+        double y = (f_zus * acc_cohesion[1]) +
+                (f_sep * acc_sep[1]) +
+                (f_aus * acc_align[1]) +
+                (f_obs * acc_obs[1]) +
+                (f_target * acc_seek[1]);
+
+        // 4. Create the final acceleration vector and limit it to max_acc[cite: 1, 2]
+        double[] acc_dest = new double[]{x, y};
+        return VectorCalculation.truncate(acc_dest, max_acc);
+    }
+
+	void move1(ArrayList<Vehicle> allVehicles, ArrayList<Obstacle> obstacles, double[] currentTarget) {
 		//STEP 1: Accelaration or Force 
-		double[] acc = calculateWeightedAcc(allVehicles, obstacles);
+		double[] acc = calculateWeightedAcc(allVehicles, obstacles, currentTarget, false);
 	
 		//STEP 2: Speed
 		vel[0] = vel[0] + acc[0];
@@ -221,6 +258,61 @@ public class Vehicle {
 		//STEP 4: Box-Simulation
 		position_Box();
 	}
+
+    // Update the move method in Vehicle.java
+    void move(ArrayList<Vehicle> allVehicles, ArrayList<Obstacle> obs, double[] target, boolean isConsuming, boolean isDispersing) {
+
+        // 1. Calculate Acceleration
+        double[] acc;
+
+        if (isDispersing) {
+            // Move randomly: ignore target, high noise/random force
+            double[] randomAcc = new double[]{(Math.random() - 0.5), (Math.random() - 0.5)};
+            acc = VectorCalculation.truncate(randomAcc, max_acc);
+        } else {
+            acc = calculateWeightedAcc(allVehicles, obs, target,  isConsuming);
+        }
+
+        // 2. Speed Update with "Braking" logic
+        vel[0] = vel[0] + acc[0];
+        vel[1] = vel[1] + acc[1];
+
+        if (isConsuming && target != null) {
+            double dist = Math.sqrt(Math.pow(target[0] - pos[0], 2) + Math.pow(target[1] - pos[1], 2));
+            // If close to target while consuming, slow down to a halt
+            if (dist < 10) {
+                vel[0] *= 0.5;
+                vel[1] *= 0.5;
+            }
+        }
+
+        // Ensure we don't exceed max_vel, but allow coming to a stop[cite: 1, 2]
+        double currentSpeed = VectorCalculation.length(vel);
+        if (currentSpeed > max_vel) {
+            vel = VectorCalculation.normalize(vel);
+            vel[0] *= max_vel;
+            vel[1] *= max_vel;
+        }
+
+        // 3. Update Position
+        pos[0] = pos[0] + vel[0];
+        pos[1] = pos[1] + vel[1];
+
+        position_Box();
+    }
+
+    double[] seekTarget(double[] target) {
+        double[] acc_dest = new double[2];
+        if (target == null) return acc_dest;
+
+        double[] vel_dest = new double[2];
+        vel_dest[0] = target[0] - pos[0];
+        vel_dest[1] = target[1] - pos[1];
+
+        acc_dest = calculateAcc(vel_dest); // Reuse existing utility
+        return VectorCalculation.truncate(acc_dest, max_acc);
+    }
+
 
     double[] obstacleAvoidance(ArrayList<Obstacle> obstacles) {
         double[] acc_total = new double[2];
